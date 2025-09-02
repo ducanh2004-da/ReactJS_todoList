@@ -9,6 +9,7 @@ export default function Task() {
         const [loading, setLoading] = useState(true);
         const [error, setError] = useState(null);
         const [rows, setRows] = useState([]);
+        // const [tags, setTags] = useState([])
         const [editId, setEditId] = useState(null);
         const [formOpen, setFormOpen] = useState(false);
 
@@ -49,6 +50,7 @@ export default function Task() {
                         .query({ query: GET_TASKS })
                         .then(({ data }) => {
                                 setRows(data.tasks.items);
+                                // setTags(data.tasks.items.tags)
                                 setLoading(false);
                         })
                         .catch((err) => {
@@ -81,6 +83,26 @@ export default function Task() {
                 { field: 'id', headerName: 'ID', width: 70 },
                 { field: 'title', headerName: 'Title', width: 300 },
                 { field: 'description', headerName: 'Description', width: 500 },
+                {
+                        field: 'tags',
+                        headerName: 'Tags',
+                        width: 300,
+                        renderCell: (params) => {
+                                const tags = params.row.tags || [];
+                                return (
+                                        <div className="flex flex-wrap gap-1">
+                                                {tags.length > 0
+                                                        ? tags.map(tag => (
+                                                                <span key={tag.id} className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-medium mr-1">
+                                                                        {tag.title}
+                                                                </span>
+                                                        ))
+                                                        : <span className="text-gray-400">No tags</span>
+                                                }
+                                        </div>
+                                );
+                        },
+                },
                 {
                         field: 'actions',
                         headerName: 'Actions',
