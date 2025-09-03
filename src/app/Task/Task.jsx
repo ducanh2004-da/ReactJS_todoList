@@ -12,10 +12,11 @@ export default function Task() {
         // const [tags, setTags] = useState([])
         const [editId, setEditId] = useState(null);
         const [formOpen, setFormOpen] = useState(false);
+        const paginationModel = { page: 0, pageSize: 5 };
 
         const GET_TASKS = gql`
-                query {
-                        tasks {
+                query GetTasks($currentPage: Float!) {
+                        tasks(currentPage: $currentPage) {
                                 totalTask
                                 totalPage
                                 items {
@@ -44,13 +45,30 @@ export default function Task() {
   }
 }
         `
+        const SEARCH_TASKS = gql`
+        mutation SearchTask($title: String!) {
+  search(title: $title) {
+    totalTask
+    totalPage
+    items {
+      id
+    title
+    description
+    dueAt
+    status
+    }
+  }
+}
+  `;
 
         useEffect(() => {
                 client
-                        .query({ query: GET_TASKS })
+                        .query({
+                                query: GET_TASKS,
+                                variables: { currentPage: Number(paginationModel.page) + 1 }
+                        })
                         .then(({ data }) => {
                                 setRows(data.tasks.items);
-                                // setTags(data.tasks.items.tags)
                                 setLoading(false);
                         })
                         .catch((err) => {
@@ -78,6 +96,23 @@ export default function Task() {
                         setError(err);
                 }
         };
+        const handleSearch = async (event) => {
+                event.preventDefault();
+                setLoading(true);
+                setError(null);
+                try{
+                        const res = await client.mutate({
+                                mutation: SEARCH_TASKS,
+                                variables: {
+                                        title: event.target.search.value
+                                },
+                        });
+                        setRows(res.data.search.items);
+                        setLoading(false);
+                }catch(err){
+                        setError(err);
+                }
+        }
 
         const columns = [
                 { field: 'id', headerName: 'ID', width: 70 },
@@ -128,10 +163,20 @@ export default function Task() {
                 },
         ];
 
-        const paginationModel = { page: 0, pageSize: 5 };
 
         return (
                 <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
+                        <div className="search">
+                                <form className="search mb-4 flex gap-2" onSubmit={handleSearch}>
+                                        <input
+                                                className='border border-gray-300 rounded-lg px-4 py-2 flex-grow'
+                                                type="text"
+                                                name='search'
+                                                id='search'
+                                                placeholder="Search tasks..." />
+                                        <button className='btn'>Search</button>
+                                </form>
+                        </div>
                         <h2 className="text-2xl font-bold text-indigo-700 mb-4">Tasks</h2>
                         {loading && <p className="text-gray-500">Loading...</p>}
                         {error && <p className="text-red-500">Error : {error.message}</p>}
